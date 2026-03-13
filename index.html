@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>House Targaryen — Nation Management Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #060606;
+    color: #c8c8c8;
+    font-family: 'Crimson Text', Georgia, serif;
+    min-height: 100vh;
+  }
+
+  input[type=number], input[type=text], select {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #e0e0e0;
+    padding: 0.45rem 0.7rem;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  input[type=number]:focus, input[type=text]:focus, select:focus {
+    border-color: #9b1c1c;
+  }
+  input[type=range] { width: 100%; accent-color: #9b1c1c; cursor: pointer; }
+
+  button { cursor: pointer; font-family: inherit; }
+
+  /* Header */
+  #header {
+    border-bottom: 1px solid #9b1c1c33;
+    background: linear-gradient(180deg, #0d0000 0%, #060606 100%);
+    padding: 0 1.5rem;
+    position: sticky; top: 0; z-index: 100;
+  }
+  #header-inner { max-width: 1200px; margin: 0 auto; }
+  #header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 0 0.5rem; flex-wrap: wrap; gap: 8px;
+  }
+  #logo-area { display: flex; align-items: center; gap: 14px; }
+  #dragon-sigil {
+    width: 52px; height: 52px;
+    background: radial-gradient(circle at 40% 35%, #9b1c1c, #4a0000);
+    border-radius: 50%; border: 2px solid #d4af3766;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px #9b1c1c44; font-size: 26px; flex-shrink: 0;
+  }
+  #portal-title { font-size: 22px; font-weight: 700; color: #d4af37; font-family: 'Cinzel', serif; letter-spacing: 0.06em; line-height: 1; }
+  #portal-sub { font-size: 11px; color: #9b1c1c; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
+  #status-area { display: flex; gap: 1.5rem; align-items: center; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+
+  /* Tabs */
+  #tabs { display: flex; gap: 4px; padding-top: 4px; flex-wrap: wrap; }
+  .tab-btn {
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: #555; padding: 0.6rem 1rem; font-size: 13px; font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s; border-radius: 6px 6px 0 0;
+  }
+  .tab-btn.active { background: #9b1c1c; border-bottom-color: #d4af37; color: #f0f0f0; }
+  .tab-btn:hover:not(.active) { color: #aaa; background: #ffffff0a; }
+
+  #rainbow-bar { height: 2px; background: linear-gradient(90deg, transparent, #9b1c1c, #d4af37, #9b1c1c, transparent); }
+
+  /* Main content */
+  #content { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: #0d0d0d; border: 1px solid #222;
+    border-radius: 12px; padding: 1.25rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card-grid-sm { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+
+  /* Stat cards */
+  .stat-card {
+    background: #111; border-radius: 8px; padding: 0.85rem 1rem;
+    display: flex; flex-direction: column; gap: 4px;
+    border: 1px solid #9b1c1c44;
+  }
+  .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
+  .stat-value { font-size: 20px; font-weight: 700; color: #d4af37; font-family: 'Cinzel', serif; }
+
+  /* Section headers */
+  .section-header { margin-bottom: 1.5rem; }
+  .section-header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .section-icon {
+    width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .section-title { font-size: 18px; color: #f0f0f0; font-family: 'Cinzel', serif; letter-spacing: 0.04em; }
+  .section-sub { font-size: 12px; color: #666; padding-left: 46px; }
+
+  /* Divider */
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, #9b1c1c55, #d4af3744, #9b1c1c55, transparent); margin: 1.25rem 0; }
+
+  /* Toggle */
+  .toggle-row { display: flex; align-items: flex-start; gap: 12px; padding: 0.6rem 0; cursor: pointer; }
+  .toggle-track {
+    width: 44px; height: 24px; border-radius: 12px; flex-shrink: 0;
+    background: #1a1a1a; border: 1px solid #333;
+    position: relative; transition: all 0.2s; cursor: pointer; margin-top: 2px;
+  }
+  .toggle-track.on { background: #9b1c1c; border-color: #c41c1c; }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #555; transition: all 0.2s;
+  }
+  .toggle-track.on .toggle-thumb { left: 23px; background: #d4af37; box-shadow: 0 0 6px #d4af3788; }
+  .toggle-label { font-size: 13px; color: #ccc; font-weight: 500; }
+  .toggle-desc { font-size: 11px; color: #666; margin-top: 2px; }
+
+  /* Field label */
+  .field-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.07em; display: block; margin-bottom: 4px; }
+
+  /* Input grid */
+  .input-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* Resource mines grid */
+  .mines-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .mine-cell {
+    background: #111; border-radius: 6px; border: 1px solid #222;
+    padding: 0.5rem 0.75rem;
+  }
+  .mine-cell-label { font-size: 11px; color: #777; margin-bottom: 4px; }
+  .mine-cell input { background: transparent; border: none; outline: none; font-family: inherit; font-size: 16px; font-weight: 700; width: 100%; }
+  .mine-cell-out { font-size: 10px; color: #555; margin-top: 2px; }
+
+  /* Alert boxes */
+  .alert { padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 12px; margin-top: 8px; }
+  .alert-success { background: #22c55e11; border: 1px solid #22c55e22; color: #22c55e; }
+  .alert-warn { background: #9b1c1c11; border: 1px solid #9b1c1c22; color: #9b1c1c; }
+  .alert-danger { background: #ef444411; border: 1px solid #ef444433; color: #ef4444; }
+
+  /* Net flow row */
+  .net-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .net-label { font-size: 12px; color: #888; }
+  .net-detail { font-size: 10px; color: #555; }
+  .net-value { font-size: 13px; font-weight: 700; min-width: 80px; text-align: right; }
+  .net-pos { color: #22c55e; }
+  .net-neg { color: #ef4444; }
+
+  /* Military unit rows */
+  .unit-row { background: #111; border-radius: 8px; border: 1px solid #1a1a1a; padding: 0.75rem; margin-bottom: 0.75rem; }
+  .unit-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .unit-name { font-size: 13px; color: #ccc; }
+  .unit-upkeep { font-size: 11px; color: #555; }
+  .unit-bottom { display: flex; justify-content: space-between; align-items: center; }
+  .unit-input { width: 100px; background: transparent; border: 1px solid #222; border-radius: 4px; font-size: 14px; font-weight: 700; padding: 2px 6px; outline: none; font-family: inherit; }
+  .unit-daily { font-size: 11px; color: #555; }
+
+  /* Warchest req rows */
+  .req-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.6rem 0.75rem; background: #111; border-radius: 6px; margin-bottom: 6px;
+  }
+  .req-label { font-size: 13px; color: #aaa; }
+  .req-value { font-size: 15px; font-weight: 700; font-family: 'Cinzel', serif; }
+
+  /* Readiness bar */
+  #readiness-bar-bg { position: relative; height: 8px; background: #1a1a1a; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  #readiness-bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; transition: width 0.4s ease, background 0.4s; }
+  #readiness-row { display: flex; justify-content: space-between; align-items: center; }
+  #readiness-pct { font-size: 22px; font-weight: 700; font-family: 'Cinzel', serif; }
+  #readiness-msg { font-size: 11px; color: #555; margin-top: 4px; }
+
+  /* War mode banner */
+  #war-mode-banner {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  #war-mode-label { font-size: 14px; font-weight: 600; }
+  #war-mode-sub { font-size: 11px; color: #666; margin-top: 2px; }
+
+  /* API tab */
+  #api-input-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+  #api-input-row input { flex: 1; }
+  #fetch-btn {
+    background: #9b1c1c; border: none; border-radius: 6px; color: #fff;
+    padding: 0.5rem 1.25rem; font-size: 14px; font-family: 'Cinzel', serif;
+  }
+  #fetch-btn:disabled { opacity: 0.6; }
+  #api-results { display: none; }
+  pre { background: #050505; border: 1px solid #1a1a1a; border-radius: 6px; padding: 0.75rem; font-size: 11px; overflow-x: auto; font-family: monospace; line-height: 1.7; margin: 0; }
+
+  /* Tax brackets */
+  #tax-brackets { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .bracket { font-size: 12px; color: #666; cursor: pointer; }
+  .bracket.active { color: #d4af37; text-decoration: underline; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid #9b1c1c22; padding: 1rem 1.5rem; margin-top: 2rem;
+  }
+  footer .inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  footer span { font-size: 11px; color: #333; }
+
+  /* War mode */
+  body.wartime #war-mode-label { color: #ef4444; }
+  body:not(.wartime) #war-mode-label { color: #22c55e; }
+
+  /* Milestone table */
+  #milestone-table { display: flex; flex-direction: column; gap: 4px; }
+  .milestone-row { display: flex; justify-content: space-between; font-size: 12px; color: #555; }
+  .milestone-row.highlight { color: #d4af37; }
+
+  /* GSA sub-toggle (smaller) */
+  #toggle-gsa.on .toggle-thumb { left: 19px !important; }
+
+  /* Sub-columns in economy */
+  .flex-col { display: flex; flex-direction: column; gap: 1rem; }
+
+  @media (max-width: 600px) {
+    .card-grid { grid-template-columns: 1fr; }
+    .input-grid-2 { grid-template-columns: 1fr; }
+    .mines-grid { grid-template-columns: 1fr 1fr; }
+    #tabs { overflow-x: auto; }
+    .tab-btn { font-size: 11px; padding: 0.5rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
+<div id="header">
+  <div id="header-inner">
+    <div id="header-top">
+      <div id="logo-area">
+        <div id="dragon-sigil">🐉</div>
+        <div>
+          <div id="portal-title">HOUSE TARGARYEN</div>
+          <div id="portal-sub">Fire &amp; Blood — Nation Management Portal</div>
+        </div>
+      </div>
+      <div id="status-area">
+        <div style="text-align:right">
+          <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.1em">Alliance</div>
+          <div style="font-size:12px;color:#888">Politics &amp; War</div>
+        </div>
+        <div class="status-dot"></div>
+      </div>
+    </div>
+
+    <div id="tabs">
+      <button class="tab-btn active" data-tab="city" onclick="switchTab('city')">🏙 City Planner</button>
+      <button class="tab-btn" data-tab="economy" onclick="switchTab('economy')">📊 Economy</button>
+      <button class="tab-btn" data-tab="military" onclick="switchTab('military')">⚔ Warchest</button>
+      <button class="tab-btn" data-tab="api" onclick="switchTab('api')">⚡ PnW API</button>
+    </div>
+  </div>
+</div>
+<div id="rainbow-bar"></div>
+
+<!-- ── MAIN CONTENT ──────────────────────────────────────────────────────── -->
+<div id="content">
+
+  <!-- ══ CITY PLANNER ════════════════════════════════════════════════════ -->
+  <div id="tab-city" class="tab-panel active">
+    <div class="section-header">
+      <div class="section-header-row">
+        <div class="section-icon" style="background:#9b1c1c22;border:1px solid #9b1c1c55">🏗</div>
+        <h2 class="section-title">City Expansion Calculator</h2>
+      </div>
+      <p class="section-sub">Plan your nation's growth with precision. Calculate new city costs and infrastructure upgrades.</p>
+    </div>
+
+    <div class="card-grid">
+
+      <!-- City Cost Card -->
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">🏙 New City Cost</h3>
+
+        <label class="field-label">City Number (X)</label>
+        <input type="number" id="city-num" value="10" min="2" max="100" oninput="calcCity()" />
+        <div style="margin:0.75rem 0 0.5rem;font-size:11px;color:#555;font-style:italic">
+          Formula: 50,000 × (X-1)³ + 150,000 × X + 75,000
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">National Projects</div>
+
+        <div class="toggle-row" onclick="toggleProject('urban')">
+          <div class="toggle-track" id="toggle-urban"><div class="toggle-thumb"></div></div>
+          <div><div class="toggle-label">Urban Planning</div><div class="toggle-desc">−$50,000,000 per city</div></div>
+        </div>
+        <div class="toggle-row" onclick="toggleProject('advanced')">
+          <div class="toggle-track" id="toggle-advanced"><div class="toggle-thumb"></div></div>
+          <div><div class="toggle-label">Advanced Urban Planning</div><div class="toggle-desc">−$100,000,000 per city (requires Urban Planning)</div></div>
+        </div>
+        <div class="toggle-row" onclick="toggleProject('metropolitan')">
+          <div class="toggle-track" id="toggle-metropolitan"><div class="toggle-thumb"></div></div>
+          <div><div class="toggle-label">Metropolitan Planning</div><div class="toggle-desc">−$150,000,000 per city</div></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Domestic Policy</div>
+
+        <div class="toggle-row" onclick="toggleProject('manifest')">
+          <div class="toggle-track" id="toggle-manifest"><div class="toggle-thumb"></div></div>
+          <div>
+            <div class="toggle-label">Manifest Destiny</div>
+            <div class="toggle-desc" id="manifest-desc">−5% city cost (−7.5% with Government Support Agency)</div>
+          </div>
+        </div>
+
+        <div id="gsa-row" style="display:none;margin-left:56px">
+          <div class="toggle-row" onclick="toggleProject('gsa')" style="padding:0.35rem 0">
+            <div class="toggle-track" id="toggle-gsa" style="width:36px;height:20px;border-radius:10px"><div class="toggle-thumb" style="width:13px;height:13px;top:2px;left:2px"></div></div>
+            <div>
+              <div class="toggle-label" style="font-size:12px">Government Support Agency</div>
+              <div class="toggle-desc">Upgrades Manifest Destiny to −7.5%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="input-grid-2" style="margin-bottom:8px">
+          <div class="stat-card" id="city-base-card">
+            <span class="stat-label">Base Cost</span>
+            <span class="stat-value" id="city-base-val" style="color:#d4af37">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Flat Discount</span>
+            <span class="stat-value" id="city-discount-val" style="color:#22c55e">$0</span>
+          </div>
+        </div>
+        <div class="input-grid-2" style="margin-bottom:8px">
+          <div class="stat-card">
+            <span class="stat-label">Policy Discount</span>
+            <span class="stat-value" id="city-policy-val" style="color:#5b8fa8">$0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total Saved</span>
+            <span class="stat-value" id="city-total-saved" style="color:#22c55e">$0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label" id="city-final-label">Final Cost — City #10</span>
+          <span class="stat-value" id="city-final-val" style="color:#9b1c1c">—</span>
+        </div>
+        <div class="alert alert-success" id="city-savings-msg" style="display:none"></div>
+      </div>
+
+      <!-- Infrastructure Card -->
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">⚙ Infrastructure Scaling</h3>
+
+        <div class="input-grid-2">
+          <div>
+            <label class="field-label">Current Infra</label>
+            <input type="number" id="infra-current" value="1000" min="11" max="9999" oninput="calcInfra()" />
+          </div>
+          <div>
+            <label class="field-label">Target Infra</label>
+            <input type="number" id="infra-target" value="2000" min="11" max="9999" oninput="calcInfra()" />
+          </div>
+        </div>
+        <div style="margin:0.75rem 0 0.5rem;font-size:11px;color:#555;font-style:italic">
+          Unit Cost = [(Infra − 10)<sup>2.2</sup> / 710] + 300
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="input-grid-2" style="margin-bottom:8px">
+          <div class="stat-card">
+            <span class="stat-label" id="infra-unit-label">Unit Cost @ 1,000</span>
+            <span class="stat-value" id="infra-unit-val" style="color:#d4af37">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Units to Buy</span>
+            <span class="stat-value" id="infra-units-val" style="color:#888">—</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label" id="infra-bulk-label">Bulk Cost (1,000 → 2,000)</span>
+          <span class="stat-value" id="infra-bulk-val" style="color:#9b1c1c">—</span>
+        </div>
+        <div class="alert alert-warn" id="infra-warn" style="display:none">⚠ Target must be higher than current infrastructure</div>
+
+        <div class="divider"></div>
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Cost Milestones</div>
+        <div id="milestone-table"></div>
+      </div>
+
+    </div>
+  </div><!-- /tab-city -->
+
+
+  <!-- ══ ECONOMY ════════════════════════════════════════════════════════ -->
+  <div id="tab-economy" class="tab-panel">
+    <div class="section-header">
+      <div class="section-header-row">
+        <div class="section-icon" style="background:#d4af3722;border:1px solid #d4af3755">📊</div>
+        <h2 class="section-title">Resource &amp; Revenue Dashboard</h2>
+      </div>
+      <p class="section-sub">Monitor daily production, consumption, and your contribution to the House Targaryen bank.</p>
+    </div>
+
+    <div class="card-grid">
+
+      <!-- Production Card -->
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">⛏ Resource Production</h3>
+
+        <label class="field-label">Continent</label>
+        <select id="continent-select" onchange="calcEconomy()" style="margin-bottom:0.75rem">
+          <option>North America</option>
+          <option>Europe</option>
+          <option>Asia</option>
+          <option>Africa</option>
+          <option>South America</option>
+          <option>Australia</option>
+        </select>
+
+        <div class="mines-grid" id="mines-grid">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- Manufacturing Card -->
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">🏭 Consumption &amp; Manufacturing</h3>
+        <div class="input-grid-2" style="margin-bottom:0.75rem">
+          <div>
+            <label class="field-label">Coal Power Plants</label>
+            <input type="number" id="coal-power" value="3" min="0" max="100" oninput="calcEconomy()" />
+          </div>
+          <div>
+            <label class="field-label">Nuclear Plants</label>
+            <input type="number" id="nuclear-power" value="1" min="0" max="50" oninput="calcEconomy()" />
+          </div>
+          <div>
+            <label class="field-label">Steel Mills</label>
+            <input type="number" id="steel-mills" value="2" min="0" max="100" oninput="calcEconomy()" />
+          </div>
+          <div>
+            <label class="field-label">Munitions Factories</label>
+            <input type="number" id="munitions-factories" value="3" min="0" max="100" oninput="calcEconomy()" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Daily Net Flow</div>
+
+        <div id="net-flow"></div>
+
+        <div class="divider"></div>
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Manufacturing Output</div>
+        <div class="input-grid-2">
+          <div class="stat-card">
+            <span class="stat-label">Munitions/Day</span>
+            <span class="stat-value" id="munitions-out" style="color:#9b1c1c">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Steel/Day</span>
+            <span class="stat-value" id="steel-out" style="color:#9b9b9b">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tax Card (full width) -->
+      <div class="card" style="grid-column:1/-1">
+        <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">🏦 Alliance Tax Calculator</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;align-items:end">
+          <div>
+            <label class="field-label">Gross Daily Income ($)</label>
+            <input type="number" id="gross-income" value="5000000" min="0" oninput="calcEconomy()" />
+          </div>
+          <div>
+            <label class="field-label" id="tax-rate-label">Tax Rate: 25%</label>
+            <input type="range" id="tax-rate" min="0" max="100" value="25" oninput="calcEconomy()" />
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Contribution to Bank</span>
+            <span class="stat-value" id="tax-contrib" style="color:#d4af37">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">You Keep</span>
+            <span class="stat-value" id="tax-keep" style="color:#22c55e">—</span>
+          </div>
+        </div>
+        <div style="margin-top:1rem;padding:0.75rem 1rem;background:#9b1c1c11;border:1px solid #9b1c1c33;border-radius:8px">
+          <div style="font-size:12px;color:#9b1c1c;font-weight:600;margin-bottom:4px">House Targaryen Tax Brackets</div>
+          <div id="tax-brackets">
+            <span class="bracket" onclick="setTax(0)">0% — Standard Members</span>
+            <span class="bracket" onclick="setTax(15)">15% — Recommended</span>
+            <span class="bracket active" onclick="setTax(25)">25% — Active War Tax</span>
+            <span class="bracket" onclick="setTax(50)">50% — Emergency War Tax</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /tab-economy -->
+
+
+  <!-- ══ MILITARY ════════════════════════════════════════════════════════ -->
+  <div id="tab-military" class="tab-panel">
+    <div class="section-header">
+      <div class="section-header-row">
+        <div class="section-icon" style="background:#c41c1c22;border:1px solid #c41c1c55">⚔</div>
+        <h2 class="section-title">Dragon Warchest</h2>
+      </div>
+      <p class="section-sub">Ensure 5-day war readiness. Track military upkeep, resource requirements, and combat readiness.</p>
+    </div>
+
+    <!-- War Mode Banner -->
+    <div class="card" style="margin-bottom:1rem">
+      <div id="war-mode-banner">
+        <div>
+          <div id="war-mode-label">🕊 PEACETIME MODE</div>
+          <div id="war-mode-sub">Peacetime rates. Soldiers: $1.25 | Tanks: $50 | Aircraft: $500 | Ships: $2,500</div>
+        </div>
+        <div class="toggle-row" onclick="toggleWar()" style="padding:0">
+          <div class="toggle-track" id="toggle-war"><div class="toggle-thumb"></div></div>
+          <div><div class="toggle-label">Wartime Upkeep</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+
+      <!-- Military Forces -->
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">⚔ Military Forces</h3>
+
+        <div class="unit-row">
+          <div class="unit-row-top">
+            <span class="unit-name">👥 Soldiers</span>
+            <span class="unit-upkeep" id="upkeep-soldiers">$1.25/unit/day</span>
+          </div>
+          <input type="range" id="slider-soldiers" min="0" max="400000" step="2000" value="75000" style="width:100%;margin-bottom:4px;accent-color:#d4af37" oninput="syncMil('soldiers')">
+          <div class="unit-bottom">
+            <input class="unit-input" type="number" id="input-soldiers" value="75000" min="0" max="400000" style="color:#d4af37" oninput="syncMilInput('soldiers')">
+            <span class="unit-daily" id="daily-soldiers">—</span>
+          </div>
+        </div>
+
+        <div class="unit-row">
+          <div class="unit-row-top">
+            <span class="unit-name">🛡 Tanks</span>
+            <span class="unit-upkeep" id="upkeep-tanks">$50/unit/day</span>
+          </div>
+          <input type="range" id="slider-tanks" min="0" max="10000" step="50" value="1250" style="width:100%;margin-bottom:4px;accent-color:#9b9b9b" oninput="syncMil('tanks')">
+          <div class="unit-bottom">
+            <input class="unit-input" type="number" id="input-tanks" value="1250" min="0" max="10000" style="color:#9b9b9b" oninput="syncMilInput('tanks')">
+            <span class="unit-daily" id="daily-tanks">—</span>
+          </div>
+        </div>
+
+        <div class="unit-row">
+          <div class="unit-row-top">
+            <span class="unit-name">✈ Aircraft</span>
+            <span class="unit-upkeep" id="upkeep-aircraft">$500/unit/day</span>
+          </div>
+          <input type="range" id="slider-aircraft" min="0" max="5000" step="25" value="750" style="width:100%;margin-bottom:4px;accent-color:#5b8fa8" oninput="syncMil('aircraft')">
+          <div class="unit-bottom">
+            <input class="unit-input" type="number" id="input-aircraft" value="750" min="0" max="5000" style="color:#5b8fa8" oninput="syncMilInput('aircraft')">
+            <span class="unit-daily" id="daily-aircraft">—</span>
+          </div>
+        </div>
+
+        <div class="unit-row" style="margin-bottom:0">
+          <div class="unit-row-top">
+            <span class="unit-name">⚓ Ships</span>
+            <span class="unit-upkeep" id="upkeep-ships">$2,500/unit/day</span>
+          </div>
+          <input type="range" id="slider-ships" min="0" max="250" step="1" value="50" style="width:100%;margin-bottom:4px;accent-color:#22c55e" oninput="syncMil('ships')">
+          <div class="unit-bottom">
+            <input class="unit-input" type="number" id="input-ships" value="50" min="0" max="250" style="color:#22c55e" oninput="syncMilInput('ships')">
+            <span class="unit-daily" id="daily-ships">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="flex-col">
+
+        <!-- 5-Day Requirements -->
+        <div class="card">
+          <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">📦 5-Day Warchest Requirements</h3>
+          <div class="req-row" style="border:1px solid #22c55e22">
+            <span class="req-label">🌾 Food</span>
+            <span class="req-value" id="req-food" style="color:#22c55e">—</span>
+          </div>
+          <div class="req-row" style="border:1px solid #9b1c1c22">
+            <span class="req-label">💣 Munitions</span>
+            <span class="req-value" id="req-munitions" style="color:#9b1c1c">—</span>
+          </div>
+          <div class="req-row" style="border:1px solid #d4af3722">
+            <span class="req-label">⛽ Gasoline</span>
+            <span class="req-value" id="req-gasoline" style="color:#d4af37">—</span>
+          </div>
+        </div>
+
+        <!-- Upkeep Summary -->
+        <div class="card">
+          <h3 style="margin:0 0 1rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">💰 Daily Upkeep Summary</h3>
+          <div class="stat-card" style="margin-bottom:8px;border-color:#ef444444">
+            <span class="stat-label">Total Daily Upkeep</span>
+            <span class="stat-value" id="upkeep-total" style="color:#ef4444">—</span>
+          </div>
+          <div class="stat-card" style="border-color:#9b1c1c44">
+            <span class="stat-label">5-Day Upkeep Cost</span>
+            <span class="stat-value" id="upkeep-5day" style="color:#9b1c1c">—</span>
+          </div>
+        </div>
+
+        <!-- Readiness -->
+        <div class="card">
+          <h3 style="margin:0 0 0.75rem;font-size:14px;color:#9b1c1c;text-transform:uppercase;letter-spacing:0.1em">🐉 War Readiness Score</h3>
+          <div id="readiness-bar-bg"><div id="readiness-bar"></div></div>
+          <div id="readiness-row">
+            <span style="font-size:12px;color:#666">Combat Readiness</span>
+            <span id="readiness-pct">0%</span>
+          </div>
+          <div id="readiness-msg"></div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /tab-military -->
+
+
+  <!-- ══ API TAB ══════════════════════════════════════════════════════════ -->
+  <div id="tab-api" class="tab-panel">
+    <div class="section-header">
+      <div class="section-header-row">
+        <div class="section-icon" style="background:#5b8fa822;border:1px solid #5b8fa855">⚡</div>
+        <h2 class="section-title">PnW API Integration</h2>
+      </div>
+      <p class="section-sub">Connect to the Politics &amp; War GraphQL API v3 to fetch real-time nation data.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <h3 style="margin:0 0 1rem;font-size:14px;color:#5b8fa8;text-transform:uppercase;letter-spacing:0.1em">🔌 GraphQL Nation Fetch</h3>
+      <div id="api-input-row">
+        <input type="text" id="nation-id-input" placeholder="Enter Nation ID (or 'demo')" onkeydown="if(event.key==='Enter')fetchNation()" />
+        <button id="fetch-btn" onclick="fetchNation()">Fetch Nation</button>
+      </div>
+      <div id="api-error" class="alert alert-danger" style="display:none"></div>
+      <div id="api-results">
+        <div class="card-grid-sm" id="api-stats-grid" style="margin-bottom:1rem"></div>
+        <div class="divider"></div>
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">GraphQL Query Used</div>
+        <pre id="api-query" style="color:#5b8fa8"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 1rem;font-size:14px;color:#5b8fa8;text-transform:uppercase;letter-spacing:0.1em">📡 Axios Service Template</h3>
+      <pre style="color:#aaa">// services/pnwApi.js
+import axios from 'axios';
+
+const PNW_API = 'https://api.politicsandwar.com/graphql';
+
+export const fetchNation = async (nationId, apiKey) => {
+  const query = `{
+    nations(id: [${nationId}]) {
+      data {
+        id nation_name leader_name
+        num_cities score
+        cities { infrastructure land }
+      }
+    }
+  }`;
+  const { data } = await axios.post(
+    `${PNW_API}?api_key=${apiKey}`,
+    { query }
+  );
+  return data.data.nations.data[0];
+};</pre>
+    </div>
+  </div><!-- /tab-api -->
+
+</div><!-- /content -->
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="inner">
+    <span style="font-family:'Cinzel',serif;letter-spacing:0.1em">HOUSE TARGARYEN — FIRE &amp; BLOOD</span>
+    <span>Politics &amp; War Nation Portal v1.0</span>
+  </div>
+</footer>
+
+<!-- ── SCRIPT ─────────────────────────────────────────────────────────────── -->
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  city: { urbanPlanning: false, advancedUrbanPlanning: false, metropolitanPlanning: false, manifestDestiny: false, govSupportAgency: false },
+  military: { warMode: false },
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const fmt = (n, d = 0) =>
+  new Intl.NumberFormat('en-US', { maximumFractionDigits: d, minimumFractionDigits: d }).format(n);
+
+const fmtMoney = n =>
+  n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B`
+  : n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M`
+  : `$${fmt(Math.round(n))}`;
+
+function calcCityCost(x) {
+  return 50000 * Math.pow(x - 1, 3) + 150000 * x + 75000;
+}
+function calcInfraUnit(c) {
+  return (Math.pow(c - 10, 2.2) / 710) + 300;
+}
+function calcInfraBulk(from, to) {
+  let total = 0;
+  for (let i = from; i < to; i++) total += calcInfraUnit(i);
+  return total;
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.querySelector('[data-tab="' + id + '"]').classList.add('active');
+}
+
+// ── CITY PLANNER ──────────────────────────────────────────────────────────
+function toggleProject(which) {
+  if (which === 'urban') {
+    state.city.urbanPlanning = !state.city.urbanPlanning;
+    document.getElementById('toggle-urban').classList.toggle('on', state.city.urbanPlanning);
+  } else if (which === 'advanced') {
+    state.city.advancedUrbanPlanning = !state.city.advancedUrbanPlanning;
+    document.getElementById('toggle-advanced').classList.toggle('on', state.city.advancedUrbanPlanning);
+  } else if (which === 'metropolitan') {
+    state.city.metropolitanPlanning = !state.city.metropolitanPlanning;
+    document.getElementById('toggle-metropolitan').classList.toggle('on', state.city.metropolitanPlanning);
+  } else if (which === 'manifest') {
+    state.city.manifestDestiny = !state.city.manifestDestiny;
+    document.getElementById('toggle-manifest').classList.toggle('on', state.city.manifestDestiny);
+    // Show/hide GSA sub-toggle
+    document.getElementById('gsa-row').style.display = state.city.manifestDestiny ? 'block' : 'none';
+    // Reset GSA if manifest turned off
+    if (!state.city.manifestDestiny) {
+      state.city.govSupportAgency = false;
+      document.getElementById('toggle-gsa').classList.remove('on');
+    }
+  } else if (which === 'gsa') {
+    state.city.govSupportAgency = !state.city.govSupportAgency;
+    document.getElementById('toggle-gsa').classList.toggle('on', state.city.govSupportAgency);
+  }
+  calcCity();
+}
+
+function calcCity() {
+  const x = parseInt(document.getElementById('city-num').value) || 2;
+  const base = calcCityCost(x);
+
+  // Flat discounts (Urban Planning projects)
+  const flatDiscount = (state.city.urbanPlanning ? 50_000_000 : 0) + (state.city.advancedUrbanPlanning ? 100_000_000 : 0) + (state.city.metropolitanPlanning ? 150_000_000 : 0);
+
+  // Manifest Destiny % discount applies to base cost (before flat discounts)
+  const mdRate = state.city.manifestDestiny
+    ? (state.city.govSupportAgency ? 0.075 : 0.05)
+    : 0;
+  const policyDiscount = base * mdRate;
+
+  const totalDiscount = flatDiscount + policyDiscount;
+  const final = Math.max(0, base - totalDiscount);
+
+  document.getElementById('city-base-val').textContent = fmtMoney(base);
+  document.getElementById('city-discount-val').textContent = fmtMoney(flatDiscount);
+  document.getElementById('city-policy-val').textContent = mdRate > 0
+    ? `${fmtMoney(policyDiscount)} (${(mdRate * 100).toFixed(1)}%)`
+    : '$0';
+  document.getElementById('city-total-saved').textContent = fmtMoney(totalDiscount);
+  document.getElementById('city-final-val').textContent = fmtMoney(final);
+  document.getElementById('city-final-label').textContent = `Final Cost — City #${x}`;
+
+  // Update manifest desc
+  document.getElementById('manifest-desc').textContent = state.city.manifestDestiny && state.city.govSupportAgency
+    ? '−7.5% city cost (Government Support Agency active)'
+    : '−5% city cost (−7.5% with Government Support Agency)';
+
+  const msg = document.getElementById('city-savings-msg');
+  if (totalDiscount > 0) {
+    msg.style.display = 'block';
+    const parts = [];
+    if (flatDiscount > 0) parts.push(`${fmtMoney(flatDiscount)} flat`);
+    if (policyDiscount > 0) parts.push(`${fmtMoney(policyDiscount)} from Manifest Destiny`);
+    msg.textContent = `✓ You save ${fmtMoney(totalDiscount)} total — ${parts.join(' + ')}`;
+  } else {
+    msg.style.display = 'none';
+  }
+  calcInfra();
+}
+
+function calcInfra() {
+  const cur = parseInt(document.getElementById('infra-current').value) || 11;
+  const tgt = parseInt(document.getElementById('infra-target').value) || 11;
+  const unit = calcInfraUnit(cur);
+  const units = Math.max(0, tgt - cur);
+  const bulk = tgt > cur ? calcInfraBulk(cur, tgt) : 0;
+
+  document.getElementById('infra-unit-label').textContent = `Unit Cost @ ${fmt(cur)}`;
+  document.getElementById('infra-unit-val').textContent = fmtMoney(unit);
+  document.getElementById('infra-units-val').textContent = fmt(units);
+  document.getElementById('infra-bulk-label').textContent = `Bulk Cost (${fmt(cur)} → ${fmt(tgt)})`;
+  document.getElementById('infra-bulk-val').textContent = tgt > cur ? fmtMoney(bulk) : '—';
+
+  document.getElementById('infra-warn').style.display = tgt <= cur ? 'block' : 'none';
+
+  // Milestones
+  const milestones = [500, 1000, 1500, 2000, 2500, 3000];
+  document.getElementById('milestone-table').innerHTML = milestones.map(n => {
+    const hi = n === cur;
+    return `<div class="milestone-row${hi ? ' highlight' : ''}">
+      <span>${fmt(n)} infra</span>
+      <span>${fmtMoney(calcInfraUnit(n))}/unit</span>
+    </div>`;
+  }).join('');
+}
+
+// ── ECONOMY ───────────────────────────────────────────────────────────────
+const CONTINENT_BONUSES = {
+  'North America': { coal:0, oil:0, iron:0, bauxite:0, lead:0, uranium:0 },
+  'Europe':        { coal:0, oil:0, iron:0, bauxite:0, lead:0, uranium:0 },
+  'Asia':          { coal:0, oil:0, iron:0.5, bauxite:0.5, lead:0, uranium:0 },
+  'Africa':        { coal:0, oil:0, iron:0.5, bauxite:0.5, lead:0, uranium:0.5 },
+  'South America': { coal:0.5, oil:0.5, iron:0, bauxite:0, lead:0, uranium:0 },
+  'Australia':     { coal:0.5, oil:0, iron:0, bauxite:0.5, lead:0.5, uranium:0.5 },
+};
+
+const RESOURCES = [
+  { key:'coal',    label:'Coal',    icon:'⬛', color:'#888',    mineKey:'mine-coal' },
+  { key:'oil',     label:'Oil',     icon:'🟤', color:'#a0672a', mineKey:'mine-oil' },
+  { key:'iron',    label:'Iron',    icon:'🩶', color:'#9b9b9b', mineKey:'mine-iron' },
+  { key:'bauxite', label:'Bauxite', icon:'🟫', color:'#cd8b4a', mineKey:'mine-bauxite' },
+  { key:'lead',    label:'Lead',    icon:'🔷', color:'#5b8fa8', mineKey:'mine-lead' },
+  { key:'uranium', label:'Uranium', icon:'☢',  color:'#22c55e', mineKey:'mine-uranium' },
+];
+
+// Build mines grid
+(function buildMines() {
+  const defaults = { coal:5, oil:5, iron:5, bauxite:5, lead:5, uranium:3 };
+  const grid = document.getElementById('mines-grid');
+  grid.innerHTML = RESOURCES.map(r => `
+    <div class="mine-cell">
+      <div class="mine-cell-label">${r.icon} ${r.label} Mines</div>
+      <input type="number" id="${r.mineKey}" value="${defaults[r.key]}" min="0" max="60"
+        style="color:${r.color}" oninput="calcEconomy()" />
+      <div class="mine-cell-out" id="${r.mineKey}-out">→ —/day</div>
+    </div>
+  `).join('');
+})();
+
+function calcEconomy() {
+  const continent = document.getElementById('continent-select').value;
+  const bonus = CONTINENT_BONUSES[continent] || CONTINENT_BONUSES['North America'];
+
+  const prod = {};
+  RESOURCES.forEach(r => {
+    const mines = parseFloat(document.getElementById(r.mineKey).value) || 0;
+    prod[r.key] = mines * 3 + (bonus[r.key] || 0) * mines;
+    document.getElementById(r.mineKey + '-out').textContent = `→ ${prod[r.key].toFixed(1)}/day`;
+  });
+
+  const coalPower = parseFloat(document.getElementById('coal-power').value) || 0;
+  const nuclearPower = parseFloat(document.getElementById('nuclear-power').value) || 0;
+  const steelMills = parseFloat(document.getElementById('steel-mills').value) || 0;
+  const munFact = parseFloat(document.getElementById('munitions-factories').value) || 0;
+
+  const coalCon = coalPower * 1.2;
+  const uranCon = nuclearPower * 1.2;
+  const leadCon = munFact * 6;
+  const munOut = munFact * 18;
+  const steelOut = steelMills * 9;
+
+  const nets = [
+    { label: 'Coal',    net: prod.coal    - coalCon, prod: prod.coal,    con: coalCon },
+    { label: 'Uranium', net: prod.uranium - uranCon, prod: prod.uranium, con: uranCon },
+    { label: 'Lead',    net: prod.lead    - leadCon, prod: prod.lead,    con: leadCon },
+  ];
+
+  document.getElementById('net-flow').innerHTML = nets.map(n => `
+    <div class="net-row">
+      <span class="net-label">${n.label}</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="net-detail">${n.prod.toFixed(1)} − ${n.con.toFixed(1)}</span>
+        <span class="net-value ${n.net >= 0 ? 'net-pos' : 'net-neg'}">${n.net >= 0 ? '+' : ''}${n.net.toFixed(1)}/day</span>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('munitions-out').textContent = fmt(munOut);
+  document.getElementById('steel-out').textContent = fmt(steelOut);
+
+  // Tax
+  const income = parseFloat(document.getElementById('gross-income').value) || 0;
+  const rate = parseFloat(document.getElementById('tax-rate').value) || 0;
+  document.getElementById('tax-rate-label').textContent = `Tax Rate: ${rate}%`;
+  document.getElementById('tax-contrib').textContent = fmtMoney(income * rate / 100);
+  document.getElementById('tax-keep').textContent = fmtMoney(income * (1 - rate / 100));
+}
+
+function setTax(rate) {
+  document.getElementById('tax-rate').value = rate;
+  document.querySelectorAll('.bracket').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === rate);
+  });
+  calcEconomy();
+}
+
+// ── MILITARY ──────────────────────────────────────────────────────────────
+const UPKEEP = {
+  peace: { soldiers: 1.25, tanks: 50, aircraft: 500, ships: 2500 },
+  war:   { soldiers: 1.88, tanks: 75, aircraft: 750, ships: 3750 },
+};
+
+function toggleWar() {
+  state.military.warMode = !state.military.warMode;
+  const on = state.military.warMode;
+  document.getElementById('toggle-war').classList.toggle('on', on);
+  document.getElementById('war-mode-label').textContent = on ? '⚔ WARTIME MODE' : '🕊 PEACETIME MODE';
+  document.getElementById('war-mode-sub').textContent = on
+    ? 'Upkeep costs increased. Soldiers: $1.88 | Tanks: $75 | Aircraft: $750 | Ships: $3,750'
+    : 'Peacetime rates. Soldiers: $1.25 | Tanks: $50 | Aircraft: $500 | Ships: $2,500';
+  document.body.classList.toggle('wartime', on);
+  calcMilitary();
+}
+
+function syncMil(unit) {
+  const v = document.getElementById('slider-' + unit).value;
+  document.getElementById('input-' + unit).value = v;
+  calcMilitary();
+}
+function syncMilInput(unit) {
+  const v = document.getElementById('input-' + unit).value;
+  document.getElementById('slider-' + unit).value = v;
+  calcMilitary();
+}
+
+function calcMilitary() {
+  const mode = state.military.warMode ? 'war' : 'peace';
+  const up = UPKEEP[mode];
+
+  const soldiers = parseFloat(document.getElementById('input-soldiers').value) || 0;
+  const tanks    = parseFloat(document.getElementById('input-tanks').value)    || 0;
+  const aircraft = parseFloat(document.getElementById('input-aircraft').value) || 0;
+  const ships    = parseFloat(document.getElementById('input-ships').value)    || 0;
+
+  // Upkeep labels
+  document.getElementById('upkeep-soldiers').textContent = `$${up.soldiers}/unit/day`;
+  document.getElementById('upkeep-tanks').textContent    = `$${up.tanks}/unit/day`;
+  document.getElementById('upkeep-aircraft').textContent = `$${up.aircraft.toLocaleString()}/unit/day`;
+  document.getElementById('upkeep-ships').textContent    = `$${up.ships.toLocaleString()}/unit/day`;
+
+  // Daily costs
+  document.getElementById('daily-soldiers').textContent = `→ ${fmtMoney(soldiers * up.soldiers)}/day`;
+  document.getElementById('daily-tanks').textContent    = `→ ${fmtMoney(tanks * up.tanks)}/day`;
+  document.getElementById('daily-aircraft').textContent = `→ ${fmtMoney(aircraft * up.aircraft)}/day`;
+  document.getElementById('daily-ships').textContent    = `→ ${fmtMoney(ships * up.ships)}/day`;
+
+  const daily = soldiers * up.soldiers + tanks * up.tanks + aircraft * up.aircraft + ships * up.ships;
+  document.getElementById('upkeep-total').textContent = fmtMoney(daily);
+  document.getElementById('upkeep-5day').textContent  = fmtMoney(daily * 5);
+
+  // 5-day requirements
+  const DAYS = 5;
+  const food      = soldiers * 0.001 * DAYS + tanks * 0.01 * DAYS;
+  const munitions = soldiers * 0.0005 * DAYS + tanks * 0.005 * DAYS + aircraft * 0.025 * DAYS + ships * 0.05 * DAYS;
+  const gasoline  = tanks * 0.01 * DAYS + aircraft * 0.1 * DAYS + ships * 0.5 * DAYS;
+
+  document.getElementById('req-food').textContent      = fmt(Math.round(food));
+  document.getElementById('req-munitions').textContent = fmt(Math.round(munitions));
+  document.getElementById('req-gasoline').textContent  = fmt(Math.round(gasoline));
+
+  // Readiness
+  const score = Math.min(100, Math.round(
+    (soldiers / 300000 * 25) + (tanks / 5000 * 25) + (aircraft / 2000 * 25) + (ships / 100 * 25)
+  ));
+  const bar = document.getElementById('readiness-bar');
+  const color = score > 75 ? '#22c55e' : score > 40 ? '#d4af37' : '#9b1c1c';
+  bar.style.width  = score + '%';
+  bar.style.background = color;
+  document.getElementById('readiness-pct').textContent = score + '%';
+  document.getElementById('readiness-pct').style.color = color;
+  document.getElementById('readiness-msg').textContent = score >= 75
+    ? '⚔ READY FOR WAR — The dragon flies!'
+    : score >= 40
+    ? '⚠ PARTIAL READINESS — Strengthen your forces'
+    : '☠ NOT WAR-READY — Recruit and arm immediately';
+}
+
+// ── API TAB ────────────────────────────────────────────────────────────────
+async function fetchNation() {
+  const id = document.getElementById('nation-id-input').value.trim();
+  if (!id) return;
+
+  const btn = document.getElementById('fetch-btn');
+  btn.textContent = 'Fetching...';
+  btn.disabled = true;
+  document.getElementById('api-error').style.display = 'none';
+  document.getElementById('api-results').style.display = 'none';
+
+  await new Promise(r => setTimeout(r, 1100));
+
+  btn.textContent = 'Fetch Nation';
+  btn.disabled = false;
+
+  if (id === 'demo' || !isNaN(Number(id))) {
+    const query = `{\n  nations(id: [${id}]) {\n    data {\n      id\n      nation_name\n      leader_name\n      num_cities\n      score\n      cities { infrastructure land }\n    }\n  }\n}`;
+    const stats = [
+      { label: 'Nation',              value: 'House of the Dragon', color: '#d4af37' },
+      { label: 'Leader',              value: 'Daemon Targaryen',    color: '#9b9b9b' },
+      { label: 'Cities',              value: '22',                  color: '#5b8fa8' },
+      { label: 'Score',               value: '18,240.5',            color: '#22c55e' },
+      { label: 'Avg Infrastructure',  value: '1,850',               color: '#d4af37' },
+      { label: 'Avg Land',            value: '2,100',               color: '#9b9b9b' },
+    ];
+
+    document.getElementById('api-stats-grid').innerHTML = stats.map(s => `
+      <div class="stat-card" style="border-color:${s.color}44">
+        <span class="stat-label">${s.label}</span>
+        <span class="stat-value" style="color:${s.color}">${s.value}</span>
+      </div>
+    `).join('');
+
+    document.getElementById('api-query').textContent = query;
+    document.getElementById('api-results').style.display = 'block';
+  } else {
+    document.getElementById('api-error').textContent = '⚠ Nation not found. Ensure the nation ID is numeric.';
+    document.getElementById('api-error').style.display = 'block';
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+calcCity();
+calcEconomy();
+calcMilitary();
+</script>
+</body>
+</html>
